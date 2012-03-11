@@ -1,16 +1,16 @@
-======================
-Minecraft Region Fixer
-======================
+=======================
+Minecraft Region Pruner
+=======================
 
 By Alejandro Aguilera (Fenixin) 
 
 Small script that tries to detect scattered region files in Minecraft
 worlds.
 
-This program uses the nbt library by twootlie (
+This program uses the nbt library by twootlie.
 
 Web page:
-https://github.com/Fenixin/Minecraft-Region-Fixer
+https://github.com/Fenixin/Minecraft-Region-Pruner
 
 
 Supported platforms
