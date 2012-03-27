@@ -39,11 +39,12 @@ def main():
                                             Author: Alejandro Aguilera (Fenixin).',\
     prog = 'region-pruner', version='0.0.1', usage=usage, epilog=epilog)
 
-    parser.add_option('--threshold', '-t', type=int, dest = 'threshold', help = 'If a region file has less than this number of chunks it will be checked for disconnection.', default = 20)
-    parser.add_option('--delete', '-d', action = 'store_true', dest = 'delete', help = 'Delete all the very unconnected region-files. Use it with care!', default = False)
-    parser.add_option('--only-list', '-l', action = 'store_true', dest = 'only_list', help = 'Only prints the list of disconnected region files', default = False)
+    parser.add_option('--threshold', '-t', type=int, dest = 'threshold', help = 'if a region file has less than this number of chunks it will be checked for disconnection.', default = 20)
+    parser.add_option('--delete', '-d', action = 'store_true', dest = 'delete', help = 'delete all the unconnected region-files. Use it with care!', default = False)
+    parser.add_option('--only-list', '-l', action = 'store_true', dest = 'only_list', help = 'only prints the list of disconnected region files. This is the default behaviour.', default = False)
+    parser.add_option('--dimension', type=int, dest = 'dimension', help = 'choose wich dimension to scan: -1 for the nether, 1 for the aether and 0 for the overworld', default = 0)
 
-    # Options and chcks
+    # Options and cheks
     (options, args) = parser.parse_args()
 
     if not args:
@@ -65,16 +66,38 @@ def main():
 
     if not options.only_list:
         print "Welcome to Region Pruner!"
-        print "Scanning world..."
+    
+    if options.dimension == -1:
+        regionset = nether_mca_files
+        print "Scanning nether..."
+    elif options.dimension == 1:
+        regionset = aether_mca_files
+        print "Scanning aether..."
+    else:
+        regionset = normal_mca_files
+        print "Scanning overworld..."
+    good_list, bad_list, total = scan_regionset(world_path, regionset, options)
 
+    if not options.only_list:
+        print "... scan finished!"
+        print "There are {0} disconnected region files of a total of {1}:\n".format(len(bad_list), total)
+    for f in bad_list:
+        print f
+    
+    if options.delete:
+        if not options.only_list:
+            print "Deleting disconnected region files."
+        for r in bad_list:
+            remove(r)
+
+def scan_regionset(world_path, regionset, options):
     # for now only scan the overworld
     good_list = []
     bad_list = []
     threshold = options.threshold
     counter = 0
-    total = len(normal_mca_files)
-    for name in normal_mca_files:
-        # some feedback
+    total = len(regionset)
+    for name in regionset:
         reg = region.RegionFile(name)
         if reg.chunk_count > threshold:
             good_list.append(name)
@@ -89,6 +112,7 @@ def main():
                         continue
                     n = get_region_name(world_path, x + i, z + j)
                     if n in good_list:
+                        has_neighbour = True
                         break
                     elif exists(n):
                         nreg = region.RegionFile(n)
@@ -102,21 +126,10 @@ def main():
 
         counter += 1
         if not options.only_list:
+            # some feedback
             if counter % 20 == 0 or counter == total:
                 print "Scanned {0} of {1} region files".format(counter, total)
-
-
-    if not options.only_list:
-        print "... scan finished!"
-        print "There are {0} disconnected region files of a total of {1}:\n".format(len(bad_list), total)
-    for f in bad_list:
-        print f
-    
-    if options.delete:
-        if not options.only_list:
-            print "Deleting disconnected region files."
-        for r in bad_list:
-            remove(r)
+    return good_list, bad_list, total
 
 
 def get_region_coords(name):
